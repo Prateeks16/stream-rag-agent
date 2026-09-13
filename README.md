@@ -1,6 +1,17 @@
 # Streaming RAG Agent
 
-Streaming Retrieval-Augmented Generation (RAG) agent in Go. It consumes real-time data from Kafka topics, processes it in configurable windows, converts the window content into embeddings using Ollama, and stores these embeddings (along with the original text) in Elasticsearch for near real-time and historical context retrieval by Large Language Models (LLMs).
+Streaming Retrieval-Augmented Generation (RAG) agent — a **polyglot (Go + Python)** project. It consumes real-time data from Kafka topics, processes it in configurable windows, converts the window content into embeddings using Ollama, and stores these embeddings (along with the original text) in Elasticsearch for near real-time and historical context retrieval by Large Language Models (LLMs).
+
+## Architecture
+
+The two languages split the workload along their strengths and interoperate through shared infrastructure:
+
+| Side | Responsibility | Entry points |
+| --- | --- | --- |
+| **Go** (`cmd/`, `internal/`) | High-throughput streaming **ingestion**: Kafka consume → windowing → embeddings → Elasticsearch, plus a RAG query API on **:8080** | `cmd/agent`, `cmd/producer` |
+| **Python** (`python/`) | ML/**query serving**: a FastAPI RAG service on **:8000**, a multi-topic Kafka producer, and a CLI client | `strag-service`, `strag-producer`, `strag-query` |
+
+Both read the same [`configs/configs.yml`](configs/configs.yml), the same Elasticsearch index (`rag_embeddings`, 768-dim `dense_vector` kNN), and the same Ollama endpoints — so windows written by the Go agent are queryable from the Python service and vice versa. See [`python/README.md`](python/README.md) for the Python side.
 
 ## Features
 
@@ -17,10 +28,13 @@ Streaming Retrieval-Augmented Generation (RAG) agent in Go. It consumes real-tim
 
 ### Prerequisites
 
-* **Go** (1.21 or higher)
+* **Go** (1.21 or higher) — for the ingestion agent
+* **Python** (3.10 or higher) — for the query service (see [`python/README.md`](python/README.md))
 * **Kafka** (running and accessible)
 * **Ollama** (running locally, with `nomic-embed-text` and `llama3` models pulled (or what if you want))
 * **Elasticsearch** (running and accessible)
+
+> A `docker-compose.yml` is provided that brings up the infrastructure (Zookeeper, Kafka, Elasticsearch, Kibana): `docker compose up -d`. Ollama and the Go/Python apps run on the host.
 
 ### Setup
 
@@ -36,10 +50,10 @@ Streaming Retrieval-Augmented Generation (RAG) agent in Go. It consumes real-tim
     ```
 
 3.  **Configure:**
-    Edit the `configs/config.yaml` file to match your Kafka, Ollama, and Elasticsearch settings.
+    Edit the `configs/configs.yml` file to match your Kafka, Ollama, and Elasticsearch settings.
 
     ```yaml
-    # Example snippet from configs/config.yaml
+    # Example snippet from configs/configs.yml
     kafka:
       brokers:
         - localhost:9092
@@ -64,11 +78,35 @@ Streaming Retrieval-Augmented Generation (RAG) agent in Go. It consumes real-tim
 
 ---
 
-## Running the Agent
+## Running the Agent (Go)
 
 ```bash
-go run cmd/agent/main.go
+go run ./cmd/agent
 ```
+
+You can also build the binaries:
+
+```bash
+go build -o bin/agent ./cmd/agent
+go build -o bin/producer ./cmd/producer
+```
+
+## Running the Python query service
+
+```bash
+cd python
+python -m venv .venv
+# Windows: .venv\Scripts\activate   |   Unix: source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+
+strag-service                       # RAG query API on http://localhost:8000
+strag-producer --topic all --rate 10  # feed both Kafka topics
+strag-query "Are there any transactions in EUR?"
+```
+
+Full details in [`python/README.md`](python/README.md).
+
 ## API Usage Examples
 
 Once the agent is running, you can send queries to its API endpoint. The agent will retrieve relevant context from Elasticsearch and augment the LLM's response.
@@ -93,3 +131,12 @@ Response
 ```bash
 {"answer":"Yes, I found transactions in Euro (EUR) including: ..."}
 ```
+
+## Deploy the frontend on Vercel
+
+The dependency-free query console lives in [`frontend/`](frontend/). In Vercel,
+create a project from this repository and set **Root Directory** to `frontend`.
+Deploy it as a static site, then enter the public URL of the Go API in the
+frontend's **Agent endpoint** field. The Go API allows browser requests by
+default; set `STRAG_ALLOWED_ORIGIN` to the Vercel origin to restrict access in
+production.

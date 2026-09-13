@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -41,7 +42,7 @@ func NewAPIServer(embedSvc *embedding.Service, llmSvc *llm.Service, esClient *ve
 			Addr:         ":8080",
 			Handler:      mux,
 			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
+			WriteTimeout: 130 * time.Second,
 			IdleTimeout:  120 * time.Second,
 		},
 	}
@@ -62,11 +63,21 @@ func (s *APIServer) Shutdown(ctx context.Context) error {
 }
 
 func (s *APIServer) handleHealth(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w, r)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 }
 
 func (s *APIServer) handleQuery(w http.ResponseWriter, r *http.Request) {
+	setCORSHeaders(w, r)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
@@ -117,6 +128,16 @@ func (s *APIServer) handleQuery(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Successfully generated LLM answer for query: %s", req.Prompt)
 	writeJSONResponse(w, http.StatusOK, QueryResponse{Answer: llmAnswer})
+}
+
+func setCORSHeaders(w http.ResponseWriter, r *http.Request) {
+	origin := os.Getenv("STRAG_ALLOWED_ORIGIN")
+	if origin == "" {
+		origin = "*"
+	}
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 }
 
 // buildRAGPrompt constructs the prompt to be sent to the LLM, including retrieved context.

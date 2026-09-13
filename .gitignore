@@ -89,3 +89,6 @@ modules.xml
 *.ipr
 
 # End of https://www.toptal.com/developers/gitignore/api/goland+iml
+
+# Local build artifacts
+bin/*.exe

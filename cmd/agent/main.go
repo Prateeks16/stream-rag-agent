@@ -70,7 +70,11 @@ func (mp *MainProcessor) ProcessWindow(w *window.Window) error {
 }
 
 func main() {
-	cfg, err := config.LoadConfig("../configs/configs.yml")
+	configPath := os.Getenv("STRAG_CONFIG")
+	if configPath == "" {
+		configPath = "configs/configs.yml"
+	}
+	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101719" />
+    <meta name="description" content="A live retrieval console for streaming Kafka data." />
+    <title>Stream RAG Agent</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="./">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>STRAG</span>
+        </a>
+        <div class="nav-meta"><span class="pulse-dot"></span><span id="nav-status">Checking agent</span></div>
+      </nav>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="kicker">Streaming intelligence / 01</p>
+          <h1>Ask your<br /><em>live data.</em></h1>
+          <p class="lede">Search the latest Kafka windows with a natural-language question. Every answer is grounded in the context your agent has indexed.</p>
+          <div class="hero-rule"><span>Kafka</span><b></b><span>Ollama</span><b></b><span>Elasticsearch</span></div>
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <div class="orbit-core"><span>RAG</span><small>LIVE</small></div>
+          <span class="orbit-label label-top">CONTEXT</span><span class="orbit-label label-bottom">SIGNAL</span>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Query workspace">
+        <div class="workspace-head">
+          <div><p class="section-label">Query console</p><h2>Retrieve a signal</h2></div>
+          <div class="status-chip" id="status-chip"><span></span><span id="status-text">Offline</span></div>
+        </div>
+        <form id="query-form" class="query-form">
+          <label for="prompt">Question for the stream</label>
+          <textarea id="prompt" rows="3" required placeholder="e.g. Are there any transactions in EUR?"></textarea>
+          <div class="form-row">
+            <label class="endpoint-label" for="api-url">Agent endpoint</label>
+            <input id="api-url" type="url" value="http://localhost:8080" spellcheck="false" />
+            <button class="primary-button" type="submit"><span>Run query</span><b aria-hidden="true">&#8599;</b></button>
+          </div>
+          <p class="form-error" id="form-error" role="alert"></p>
+        </form>
+        <div class="answer-panel" id="answer-panel" aria-live="polite">
+          <div class="answer-placeholder" id="answer-placeholder"><span class="placeholder-line"></span><span class="placeholder-line short"></span><p>Your grounded answer will appear here.</p></div>
+          <div class="answer-loading" id="answer-loading"><span></span><span></span><span></span><p>Searching context and asking the model</p></div>
+          <div class="answer-content" id="answer-content"><div class="answer-meta"><span>AGENT RESPONSE</span><time id="answer-time"></time></div><p id="answer-text"></p></div>
+        </div>
+      </section>
+
+      <footer class="footer"><span>STREAM RAG AGENT</span><span>Real-time context, made queryable.</span><span>v0.1</span></footer>
+    </main>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

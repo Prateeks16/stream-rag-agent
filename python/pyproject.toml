@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stream-rag-agent-py"
+version = "0.1.0"
+description = "Python query/serving side of the Stream RAG Agent (FastAPI service, Kafka producer, CLI)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+    "elasticsearch>=8.13,<9",
+    "confluent-kafka>=2.5",
+    "pyyaml>=6",
+    "pydantic>=2",
+]
+
+[project.scripts]
+strag-service = "strag.service:main"
+strag-producer = "strag.producer:main"
+strag-query = "strag.client:main"
+
+[tool.setuptools.packages.find]
+include = ["strag*"]

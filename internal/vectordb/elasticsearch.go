@@ -61,8 +61,6 @@ func (c *ElasticsearchClient) createIndexWithMapping() error {
 		return nil
 	}
 
-	// Mapping for the index (adjust dimension based on your Ollama embedding model)
-	// nomic-embed-text typically has 768 dimensions
 	mapping := `{
 		"settings": {
 			"number_of_shards": 1,
@@ -79,9 +77,9 @@ func (c *ElasticsearchClient) createIndexWithMapping() error {
 				"context_text":   {"type": "text"},
 				"embedding": {
 					"type": "dense_vector",
-					"dims": 768,  // IMPORTANT: Adjust this dimension based on your Ollama embedding model
+					"dims": 768,
 					"index": true,
-                    "similarity": "cosine"
+					"similarity": "cosine"
 				}
 			}
 		}
