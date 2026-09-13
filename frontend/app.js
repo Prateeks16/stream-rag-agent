@@ -12,6 +12,24 @@ const statusChip = document.querySelector('#status-chip');
 const statusText = document.querySelector('#status-text');
 const navStatus = document.querySelector('#nav-status');
 const demoMode = document.querySelector('#demo-mode');
+const eventList = document.querySelector('#event-list');
+
+const demoEvents = [
+  { topic: 'financial_transactions', id: 'TX-1048', text: 'EUR 1,240.00 / transfer / ACC-0833', detail: 'Supplier transfer' },
+  { topic: 'financial_transactions', id: 'TX-1051', text: 'USD 86.40 / purchase / ACC-0418', detail: 'Restaurant bill' },
+  { topic: 'financial_transactions', id: 'TX-1054', text: 'EUR 52.00 / refund / ACC-0833', detail: 'Subscription refund' },
+  { topic: 'financial_transactions', id: 'TX-1057', text: 'GBP 430.00 / withdrawal / ACC-0192', detail: 'ATM withdrawal' },
+  { topic: 'financial_transactions', id: 'TX-1061', text: 'USD 2,800.00 / deposit / ACC-0704', detail: 'Salary deposit' },
+  { topic: 'sensor_data', id: 'SEN-204', text: 'M-204 / 78.4 C / 6.8 bar', detail: 'WARN / 4.2 mm/s vibration' },
+  { topic: 'sensor_data', id: 'SEN-201', text: 'M-201 / 46.2 C / 4.1 bar', detail: 'NORMAL / 1.1 mm/s vibration' },
+  { topic: 'sensor_data', id: 'SEN-207', text: 'M-207 / 51.8 C / 5.4 bar', detail: 'NORMAL / 1.7 mm/s vibration' },
+];
+
+eventList.innerHTML = demoEvents.map((event) => `<button class="event-row" type="button" data-query="${event.id}"><span class="event-topic">${event.topic}</span><strong>${event.id}</strong><span>${event.text}</span><em>${event.detail}</em></button>`).join('');
+eventList.querySelectorAll('.event-row').forEach((row) => row.addEventListener('click', () => {
+  promptInput.value = `What do you know about ${row.dataset.query}?`;
+  promptInput.focus();
+}));
 
 apiInput.value = localStorage.getItem('strag-api-url') || apiInput.value;
 apiInput.addEventListener('change', () => localStorage.setItem('strag-api-url', apiInput.value.replace(/\/$/, '')));
@@ -32,13 +50,25 @@ async function checkHealth() {
 
 function getDemoAnswer(prompt) {
   const question = prompt.toLowerCase();
-  if (question.includes('sensor') || question.includes('temperature') || question.includes('pressure') || question.includes('machine')) {
-    return 'I found 3 recent sensor windows. Machine M-204 is the only one worth watching: temperature reached 78.4 C, pressure was 6.8 bar, and vibration measured 4.2 mm/s at 14:32 UTC. Its status is WARN. Machines M-201 and M-207 remained within their normal ranges.';
+  const matchingEvents = demoEvents.filter((event) => question.includes(event.id.toLowerCase()) || question.includes(event.topic.replace('_', ' ')) || question.includes(event.topic));
+  if (matchingEvents.length === 1) {
+    const event = matchingEvents[0];
+    return `${event.id} is in the ${event.topic} stream: ${event.text}. Details: ${event.detail}.`;
   }
-  if (question.includes('account') || question.includes('transaction') || question.includes('eur') || question.includes('refund') || question.includes('payment')) {
-    return 'Yes. The demo stream contains 3 financial transactions: TX-1048 for EUR 1,240.00 on account ACC-0833, TX-1051 for USD 86.40 on ACC-0418, and a EUR 52.00 refund on ACC-0833. The largest EUR transaction is TX-1048, a supplier transfer.';
+  if (question.includes('sensor') || question.includes('temperature') || question.includes('pressure') || question.includes('machine') || question.includes('vibration')) {
+    const sensors = demoEvents.filter((event) => event.topic === 'sensor_data');
+    return `I found ${sensors.length} sensor events. ${sensors.map((event) => `${event.id} (${event.text}; ${event.detail})`).join('; ')}.`;
   }
-  return 'The demo index contains financial_transactions and sensor_data windows. Try asking about EUR transactions, account ACC-0833, machine temperature, pressure, or sensor warnings.';
+  let transactions = demoEvents.filter((event) => event.topic === 'financial_transactions');
+  const currency = ['eur', 'usd', 'gbp'].find((value) => question.includes(value));
+  const account = demoEvents.map((event) => event.text.match(/ACC-\d+/)?.[0]).find((value) => value && question.includes(value.toLowerCase()));
+  if (currency) transactions = transactions.filter((event) => event.text.toLowerCase().startsWith(currency));
+  if (account) transactions = transactions.filter((event) => event.text.includes(account));
+  if (question.includes('transaction') || question.includes('payment') || question.includes('refund') || question.includes('account') || currency || account) {
+    if (!transactions.length) return 'No matching financial transaction was found in the demo stream. Try EUR, USD, GBP, ACC-0833, or TX-1048.';
+    return `I found ${transactions.length} matching transaction${transactions.length === 1 ? '' : 's'}: ${transactions.map((event) => `${event.id} (${event.text}; ${event.detail})`).join('; ')}.`;
+  }
+  return 'The demo stream has 5 financial transactions and 3 sensor events. Ask about EUR, ACC-0833, TX-1048, M-204, temperature, or vibration.';
 }
 
 demoMode.addEventListener('change', checkHealth);
