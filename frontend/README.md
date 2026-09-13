@@ -5,5 +5,9 @@ This is a dependency-free static frontend for the Go query API. Deploy the
 public Go API URL in the **Agent endpoint** field; it is persisted in the
 browser for the next visit.
 
+The frontend starts in **Use demo data** mode, which returns representative
+financial transaction and sensor answers without requiring Kafka, Elasticsearch,
+Ollama, or the Go API. Turn the toggle off to use the live `/query` endpoint.
+
 For local development, serve this directory with any static server and run the
 Go agent on `http://localhost:8080`.

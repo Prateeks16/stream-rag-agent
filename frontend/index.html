@@ -41,6 +41,7 @@
           <label for="prompt">Question for the stream</label>
           <textarea id="prompt" rows="3" required placeholder="e.g. Are there any transactions in EUR?"></textarea>
           <div class="form-row">
+            <label class="demo-toggle"><input id="demo-mode" type="checkbox" checked /><span class="toggle-track"><i></i></span><span>Use demo data</span></label>
             <label class="endpoint-label" for="api-url">Agent endpoint</label>
             <input id="api-url" type="url" value="http://localhost:8080" spellcheck="false" />
             <button class="primary-button" type="submit"><span>Run query</span><b aria-hidden="true">&#8599;</b></button>
